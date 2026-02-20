@@ -16,6 +16,7 @@ ZenX is a modular Go backend framework designed for production APIs and enterpri
 - [Observability](#observability)
 - [Security](#security)
 - [OpenAPI and Swagger UI](#openapi-and-swagger-ui)
+- [How to use this framework in real projects](#how-to-use-this-framework-in-real-projects)
 - [How to run](#how-to-run)
 - [How to test](#how-to-test)
 - [How to debug](#how-to-debug)

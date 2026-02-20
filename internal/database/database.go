@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"zenx/pkg/metrics"
 )
 
 type DB struct {
@@ -55,8 +57,46 @@ func (d *DB) Migrate(ctx context.Context, dir string) error {
 		if _, execErr := tx.ExecContext(ctx, string(stmt)); execErr != nil {
 			return fmt.Errorf("migration %s failed: %w", file, execErr)
 		}
+		metrics.DBQueries.WithLabelValues("migration").Inc()
 	}
 	return tx.Commit()
+}
+
+func (d *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	metrics.DBQueries.WithLabelValues("exec").Inc()
+	return d.SQL.ExecContext(ctx, query, args...)
+}
+
+func (d *DB) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	metrics.DBQueries.WithLabelValues("query").Inc()
+	return d.SQL.QueryContext(ctx, query, args...)
+}
+
+func (d *DB) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	metrics.DBQueries.WithLabelValues("query_row").Inc()
+	return d.SQL.QueryRowContext(ctx, query, args...)
+}
+
+// ORM-like helpers
+func (d *DB) Insert(ctx context.Context, table string, fields map[string]any) (sql.Result, error) {
+	if len(fields) == 0 {
+		return nil, errors.New("insert fields cannot be empty")
+	}
+	cols := make([]string, 0, len(fields))
+	placeholders := make([]string, 0, len(fields))
+	args := make([]any, 0, len(fields))
+	for k, v := range fields {
+		cols = append(cols, k)
+		placeholders = append(placeholders, "?")
+		args = append(args, v)
+	}
+	q := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table, strings.Join(cols, ","), strings.Join(placeholders, ","))
+	return d.ExecContext(ctx, q, args...)
+}
+
+func (d *DB) Delete(ctx context.Context, table, where string, args ...any) (sql.Result, error) {
+	q := fmt.Sprintf("DELETE FROM %s WHERE %s", table, where)
+	return d.ExecContext(ctx, q, args...)
 }
 
 type Query struct {

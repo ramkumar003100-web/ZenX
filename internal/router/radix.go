@@ -32,6 +32,7 @@ func (r *Router) Handle(method, path string, h HandlerFunc, m ...Middleware) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	method = strings.ToUpper(method)
 	if r.trees[method] == nil {
 		r.trees[method] = &node{children: map[string]*node{}}
 	}
@@ -60,6 +61,10 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.mu.RUnlock()
 
 	if root == nil {
+		if r.pathExists(req.URL.Path) {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
 		http.NotFound(w, req)
 		return
 	}
@@ -85,6 +90,29 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	cur.handler(ctx)
+}
+
+func (r *Router) pathExists(path string) bool {
+	for _, root := range r.trees {
+		cur := root
+		matched := true
+		for _, seg := range splitPath(path) {
+			if next := cur.children[seg]; next != nil {
+				cur = next
+				continue
+			}
+			if cur.param != nil {
+				cur = cur.param
+				continue
+			}
+			matched = false
+			break
+		}
+		if matched && cur.handler != nil {
+			return true
+		}
+	}
+	return false
 }
 
 func splitPath(path string) []string {

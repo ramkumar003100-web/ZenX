@@ -20,7 +20,6 @@ func RunNew(args []string) {
 	}
 
 	dirs := []string{
-		project,
 		filepath.Join(project, "cmd", "server"),
 		filepath.Join(project, "internal", "handlers"),
 		filepath.Join(project, "internal", "services"),
@@ -38,16 +37,51 @@ func RunNew(args []string) {
 
 	mainContent := `package main
 
-import "fmt"
+import (
+	"context"
+	"log"
+	"net/http"
+	"time"
+
+	"` + project + `/internal/handlers"
+)
 
 func main() {
-	fmt.Println("Welcome to ZenX")
+	srv := handlers.NewServer()
+	httpServer := &http.Server{
+		Addr:         ":8080",
+		Handler:      srv,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+	<-context.Background().Done()
+}
+`
+
+	handlerContent := `package handlers
+
+import (
+	"net/http"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+func NewServer() http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK); _, _ = w.Write([]byte("ok")) })
+	return mux
 }
 `
 
 	goMod := fmt.Sprintf("module %s\n\ngo 1.22\n", project)
-
 	writeFile(filepath.Join(project, "cmd", "server", "main.go"), mainContent)
+	writeFile(filepath.Join(project, "internal", "handlers", "server.go"), handlerContent)
 	writeFile(filepath.Join(project, "go.mod"), goMod)
 	fmt.Printf("ZenX project created: %s\n", project)
 }

@@ -6,6 +6,8 @@ import (
 	"math"
 	"sync"
 	"time"
+
+	"zenx/pkg/metrics"
 )
 
 type queuedJob struct {
@@ -44,8 +46,12 @@ func NewQueue(workers int) *Queue {
 }
 
 func (q *Queue) Enqueue(job Job, delay time.Duration, retries int) {
+	q.enqueue(&queuedJob{job: job, runAt: time.Now().Add(delay), maxRetry: retries})
+}
+
+func (q *Queue) enqueue(job *queuedJob) {
 	q.mu.Lock()
-	heap.Push(&q.jobs, &queuedJob{job: job, runAt: time.Now().Add(delay), maxRetry: retries})
+	heap.Push(&q.jobs, job)
 	q.mu.Unlock()
 	select {
 	case q.notify <- struct{}{}:
@@ -80,11 +86,16 @@ func (q *Queue) worker(ctx context.Context) {
 		if job == nil {
 			return
 		}
-		if err := job.job.Run(ctx); err != nil && job.retry < job.maxRetry {
-			job.retry++
-			backoff := time.Duration(math.Pow(2, float64(job.retry))) * time.Second
-			q.Enqueue(job.job, backoff, job.maxRetry)
+		if err := job.job.Run(ctx); err != nil {
+			metrics.JobRuns.WithLabelValues(job.job.Name(), "failed").Inc()
+			if job.retry < job.maxRetry {
+				job.retry++
+				job.runAt = time.Now().Add(time.Duration(math.Pow(2, float64(job.retry))) * time.Second)
+				q.enqueue(job)
+			}
+			continue
 		}
+		metrics.JobRuns.WithLabelValues(job.job.Name(), "success").Inc()
 	}
 }
 

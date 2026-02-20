@@ -1,6 +1,11 @@
 package openapi
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"net/http"
+	"strings"
+	"sync"
+)
 
 type Spec struct {
 	OpenAPI    string                     `json:"openapi"`
@@ -18,6 +23,7 @@ type Path struct {
 }
 
 type Builder struct {
+	mu   sync.RWMutex
 	spec Spec
 }
 
@@ -35,9 +41,12 @@ func New(title, version string) *Builder {
 }
 
 func (b *Builder) AddPath(path, method, summary string, secured bool, roles ...string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	if b.spec.Paths[path] == nil {
 		b.spec.Paths[path] = map[string]Path{}
 	}
+	method = strings.ToLower(method)
 	p := Path{Summary: summary, Responses: map[string]any{"200": map[string]string{"description": "OK"}}}
 	if secured {
 		p.Security = []map[string][]string{{"BearerAuth": roles}}
@@ -46,5 +55,19 @@ func (b *Builder) AddPath(path, method, summary string, secured bool, roles ...s
 }
 
 func (b *Builder) JSON() ([]byte, error) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
 	return json.MarshalIndent(b.spec, "", "  ")
+}
+
+func (b *Builder) Handler() http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		payload, err := b.JSON()
+		if err != nil {
+			http.Error(w, "spec build failed", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(payload)
+	}
 }

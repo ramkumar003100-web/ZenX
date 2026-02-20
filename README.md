@@ -403,6 +403,232 @@ mux.HandleFunc("/swagger", openapi.SwaggerUI("/openapi.json"))
 
 ---
 
+## How to use this framework in real projects
+
+This section shows a practical pattern for building a ZenX application with **models, repositories, services, controllers, routes, and middleware**.
+
+### 1) Suggested project structure
+
+When using ZenX in an app repository, a common structure is:
+
+```text
+myservice/
+├─ cmd/server/main.go
+├─ internal/
+│  ├─ models/
+│  ├─ repositories/
+│  ├─ services/
+│  ├─ controllers/
+│  ├─ middleware/
+│  └─ routes/
+├─ migrations/
+└─ configs/
+```
+
+### 2) Define a model
+
+```go
+type User struct {
+    ID       int64  `json:"id"`
+    Email    string `json:"email" validate:"required,email"`
+    Name     string `json:"name" validate:"required,min=2,max=100"`
+    Password string `json:"password,omitempty" validate:"required,min=8"`
+}
+```
+
+### 3) Create a repository
+
+Use `internal/database` query helpers and transaction support.
+
+```go
+type UserRepository struct {
+    DB *database.DB
+}
+
+func (r *UserRepository) Create(ctx context.Context, u User) error {
+    _, err := r.DB.Insert(ctx, "users", map[string]any{
+        "email": u.Email,
+        "name":  u.Name,
+    })
+    return err
+}
+
+func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*User, error) {
+    q, args, _ := database.Table("users").
+        Select("id", "email", "name").
+        Where("email = ?", email).
+        Limit(1).
+        Build()
+
+    row := r.DB.QueryRowContext(ctx, q, args...)
+    var u User
+    if err := row.Scan(&u.ID, &u.Email, &u.Name); err != nil {
+        return nil, err
+    }
+    return &u, nil
+}
+```
+
+### 4) Create a service layer
+
+Put business rules here (hashing, cache policy, async jobs, feature checks).
+
+```go
+type UserService struct {
+    Users *UserRepository
+    Cache *cache.RedisCache
+    Jobs  *jobs.Queue
+}
+
+func (s *UserService) Register(ctx context.Context, u User) error {
+    hash, err := auth.HashPassword(u.Password)
+    if err != nil {
+        return err
+    }
+    u.Password = hash
+
+    if err := s.Users.Create(ctx, u); err != nil {
+        return err
+    }
+
+    s.Jobs.Enqueue(jobs.JobFunc{
+        JobName: "send_welcome_email",
+        Fn: func(context.Context) error {
+            // send email via notifications.EmailSender
+            return nil
+        },
+    }, 0, 3)
+
+    return nil
+}
+```
+
+### 5) Create a controller (handler)
+
+Controllers should focus on HTTP concerns: bind, validate, authorize, call service, respond.
+
+```go
+type UserController struct {
+    Validator *validation.Validator
+    Service   *UserService
+}
+
+func (ctl *UserController) Register(c *router.Context) {
+    var req User
+    if err := validation.BindAndValidate(c.Request, &req, ctl.Validator); err != nil {
+        http.Error(c.Writer, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    if err := ctl.Service.Register(c.Request.Context(), req); err != nil {
+        http.Error(c.Writer, "failed to register user", http.StatusInternalServerError)
+        return
+    }
+
+    c.Writer.WriteHeader(http.StatusCreated)
+    _, _ = c.Writer.Write([]byte(`{"status":"created"}`))
+}
+```
+
+### 6) Register dependencies with DI
+
+```go
+container := di.New()
+container.Register(db)
+container.Register(redisCache)
+container.Register(validation.New())
+container.Register(userRepo)
+container.Register(userService)
+
+var userController UserController
+_ = container.Resolve(&userController)
+```
+
+### 7) Build middleware stack
+
+A common order:
+1. request metadata (`RequestID`)
+2. security headers + CORS
+3. timeout and rate limit
+4. auth + RBAC for protected routes
+
+```go
+r := router.New()
+r.Use(
+    middleware.RequestID(),
+    middleware.SecureHeaders(),
+    middleware.CORS([]string{"https://app.example.com"}),
+    middleware.Timeout(15*time.Second),
+    middleware.RateLimit(20, 40),
+)
+
+jwtMgr := auth.NewJWTManager(cfg.JWTSecret, cfg.AppName, 24*time.Hour)
+
+r.Handle("POST", "/auth/register", userController.Register)
+r.Handle("GET", "/admin/users", adminListUsers,
+    auth.JWTAuth(jwtMgr),
+    auth.RequireRoles("admin"),
+)
+```
+
+### 8) Add custom middleware
+
+ZenX middleware signature:
+
+```go
+func MyMiddleware(next router.HandlerFunc) router.HandlerFunc {
+    return func(c *router.Context) {
+        start := time.Now()
+        next(c)
+        _ = start // track latency, log, etc.
+    }
+}
+```
+
+### 9) Add routes to OpenAPI
+
+```go
+spec := openapi.New("My Service", "1.0.0")
+spec.AddPath("/auth/register", "POST", "Register user", false)
+spec.AddPath("/admin/users", "GET", "List users", true, "admin")
+```
+
+### 10) Add health, metrics, and swagger endpoints
+
+```go
+mux := http.NewServeMux()
+mux.Handle("/metrics", metrics.Handler())
+mux.HandleFunc("/openapi.json", spec.Handler())
+mux.HandleFunc("/swagger", openapi.SwaggerUI("/openapi.json"))
+mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+    w.WriteHeader(http.StatusOK)
+    _, _ = w.Write([]byte("ok"))
+})
+```
+
+### 11) Model migrations
+
+Place SQL files in `migrations/` and run:
+
+```go
+if err := db.Migrate(ctx, "./migrations"); err != nil {
+    log.Fatal(err)
+}
+```
+
+### 12) Debugging flow for new features
+
+When adding a new controller or middleware:
+
+1. create request/response model and validation tags.
+2. add repository queries and service methods.
+3. wire controller with DI.
+4. attach middleware at route or global level.
+5. add OpenAPI route metadata.
+6. test endpoint via curl/Postman and verify metrics/logs.
+
+---
+
 ## How to run
 
 ### Local run (framework repo)

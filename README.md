@@ -1,747 +1,672 @@
-# ZenX Framework
+# ZenX — Autonomous Backend Platform Runtime for Go
 
-ZenX is a modular Go backend framework designed for production APIs and enterprise workloads. It includes routing, middleware, authentication, database and cache layers, jobs, distributed patterns, observability, and developer tooling.
+> ZenX is a production-grade backend platform runtime built in Go, designed to move teams beyond “just a web framework” toward a fully integrated, enterprise-ready, and increasingly autonomous engineering system.
+
+[![Go Version](https://img.shields.io/badge/Go-1.21%2B-00ADD8?logo=go)](#installation-guide)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](#license)
+[![Observability](https://img.shields.io/badge/Observability-OpenTelemetry%20%7C%20Prometheus-blue)](#production-readiness)
+[![Platform](https://img.shields.io/badge/Deployment-Docker%20%7C%20Kubernetes-326CE5?logo=kubernetes)](#installation-guide)
 
 ---
 
 ## Table of Contents
 
-- [What ZenX provides](#what-zenx-provides)
-- [Repository layout](#repository-layout)
-- [Quick start](#quick-start)
-- [CLI usage](#cli-usage)
-- [Configuration](#configuration)
-- [Core framework modules](#core-framework-modules)
-- [Enterprise modules](#enterprise-modules)
-- [Observability](#observability)
-- [Security](#security)
-- [OpenAPI and Swagger UI](#openapi-and-swagger-ui)
-- [How to use this framework in real projects](#how-to-use-this-framework-in-real-projects)
-- [How to run](#how-to-run)
-- [How to test](#how-to-test)
-- [How to debug](#how-to-debug)
-- [Integration flow example](#integration-flow-example)
-- [Production rollout checklist](#production-rollout-checklist)
-- [Known environment notes](#known-environment-notes)
+1. [Project Overview](#project-overview)
+2. [Core Framework Features](#core-framework-features)
+3. [Ultra Enterprise Expansion Features](#ultra-enterprise-expansion-features)
+4. [Autonomous Platform Engineering Layer](#autonomous-platform-engineering-layer)
+5. [Architecture Diagram Section](#architecture-diagram-section)
+6. [Installation Guide](#installation-guide)
+7. [Example Use Cases](#example-use-cases)
+8. [Production Readiness](#production-readiness)
+9. [Roadmap](#roadmap)
+10. [License & Contribution](#license--contribution)
 
 ---
 
-## What ZenX provides
+## Project Overview
 
-ZenX currently ships with:
+ZenX is a **Go backend platform runtime** that combines the speed and clarity of a modern framework with the operational depth of a platform engineering stack. It is designed for teams that need to ship API products quickly, but also need enterprise-grade governance, observability, security, and autonomous operations as systems grow.
 
-1. **Router & middleware**
-   - Radix-style route matching with path params.
-   - Middleware chain composition.
-   - Request context support and request IDs.
-   - Timeout, CORS, in-memory rate limiting, and Redis-backed distributed rate limiting.
+Traditional frameworks are excellent at handling HTTP requests and wiring business logic. ZenX goes further: it unifies routing, middleware, DI, authentication, authorization, storage, messaging, observability, platform controls, and operational intelligence into one coherent runtime model. This allows engineering organizations to standardize architecture, reduce platform drift, and scale service delivery across teams.
 
-2. **Dependency injection**
-   - Thread-safe service container.
-   - Struct-field dependency resolution for handlers/services.
+### Vision: Backend Platform Runtime
 
-3. **Config & logging**
-   - Environment variable config loader.
-   - YAML/JSON/TOML config file loading.
-   - Hot-reload watcher for file-based config.
-   - Structured JSON logger with request ID propagation.
+ZenX’s vision is to become the **control fabric for backend products**:
 
-4. **Database layer**
-   - MySQL and PostgreSQL driver support.
-   - Migration runner from `migrations/*.sql`.
-   - Transaction manager.
-   - Query builder + lightweight ORM-like helpers (`Insert`, `Delete`).
+- A runtime where service teams can build independently without sacrificing platform consistency.
+- A standardized contract for security, telemetry, deployment, and policy controls.
+- A progressive path from monolith APIs to distributed microservices to autonomous, self-optimizing systems.
+- A foundation where code, operations, governance, and AI-assisted optimization converge.
 
-5. **AuthN/AuthZ**
-   - JWT signing and verification.
-   - JWT auth middleware.
-   - RBAC role checks.
-   - Password hashing and verification (bcrypt).
+In short, ZenX is not simply an HTTP framework. It is a **backend operating model** that supports product velocity, enterprise reliability, and future-ready autonomy.
 
-6. **Validation engine**
-   - JSON request binding.
-   - Tag-driven validation (`required`, `min`, `max`, `email`, etc. from validator library).
-   - Structured validation error responses.
+### Target Use Cases
 
-7. **Jobs**
-   - In-memory worker queue.
-   - Delayed + recurring jobs.
-   - Retry with exponential backoff.
-   - Redis-backed distributed queue with dead-letter queue.
+ZenX is designed for organizations building and operating:
 
-8. **Cache**
-   - Redis integration with pooling.
-   - KV, hash, TTL, exists, delete operations.
+- **SaaS platforms** with tenancy isolation, subscription management, and lifecycle automation.
+- **Fintech and regulated systems** requiring auditability, policy controls, and strong identity enforcement.
+- **AI-native products** that combine inference, event pipelines, and adaptive scaling.
+- **Enterprise integration layers** exposing APIs across internal domains and external partners.
+- **Microservices ecosystems** with service discovery, gateways, and event-driven communication.
+- **Real-time applications** that require WebSockets, low-latency messaging, and traffic control.
 
-9. **OpenAPI / Swagger**
-   - Programmatic OpenAPI spec builder.
-   - Swagger UI endpoint.
-   - Security/roles metadata in documented operations.
+### ZenX Compared to Common Frameworks
 
-10. **Developer UX**
-    - CLI scaffold: `zenx new <project>`.
-    - Generated starter project with `/health` and `/metrics` endpoints.
+| Platform | Primary Strength | Typical Ceiling | ZenX Differentiation |
+|---|---|---|---|
+| Gin | Fast minimal HTTP routing in Go | Requires substantial ecosystem assembly for enterprise concerns | ZenX keeps performance while adding integrated platform layers (identity, observability, policy, runtime control). |
+| Echo | Productive API development with middleware | Enterprise architecture decisions remain externalized | ZenX embeds enterprise patterns (RBAC, audit, distributed operations, control plane primitives). |
+| Spring Boot | Rich enterprise ecosystem | Higher operational and runtime complexity; JVM-centric | ZenX offers Go-native performance and simpler runtime footprint with platform-grade capabilities. |
+| NestJS | Structured modular Node.js development | Throughput/resource profile may be limiting at scale in specific workloads | ZenX targets high-performance Go services with enterprise controls and autonomous runtime evolution. |
+| Django | Batteries-included rapid development | Often web-first and monolith-centric architecture assumptions | ZenX is cloud-native/backend-native with distributed-first and platform engineering orientation. |
 
-11. **Enterprise additions**
-    - WebSocket real-time hub + room broadcast.
-    - Feature flags (global / user / role).
-    - Optional GraphQL operation engine.
-    - Notification services (SMTP email + webhook push retries).
-    - File upload/storage service with optional AES encryption.
-    - OpenTelemetry tracer wrapper.
-    - Plugin hook manager.
+### Why ZenX Evolves Beyond a Traditional Framework
+
+ZenX shifts the conversation from “How do we write handlers?” to “How do we run backend systems at scale?” It introduces:
+
+- **Integrated architecture primitives** (events, discovery, control plane hooks, distributed leadership).
+- **Operational intelligence** (metrics, tracing, health score orchestration, anomaly signals).
+- **Governance by design** (RBAC, audit trails, security boundaries, compliance-ready controls).
+- **Deployment-aware runtime behavior** (blue/green, canary, progressive delivery, failover posture).
+
+This makes ZenX suitable for organizations that treat backend architecture as a strategic capability, not only a development concern.
 
 ---
 
-## Repository layout
+## Core Framework Features
+
+ZenX Core provides a high-performance, composable baseline for modern Go services.
+
+### Core Capability Matrix
+
+| Capability | Description | Outcome |
+|---|---|---|
+| Router (Radix Tree) | Path matching using radix tree structures with parameterized routes and method-aware dispatch. | Fast routing with predictable latency. |
+| Middleware System | Layered request lifecycle hooks for cross-cutting concerns (timeouts, CORS, auth, rate limits, tracing). | Consistent policy enforcement and reduced duplication. |
+| Dependency Injection Container | Thread-safe service registration and resolution for modular design. | Cleaner architecture and testability. |
+| Config & Logger | Multi-source config loading (env/file), hot-reload patterns, structured JSON logging. | Environment consistency and operability. |
+| Database Layer | MySQL/PostgreSQL support, transaction orchestration, query builder and ORM-like helpers. | Reliable persistence abstractions. |
+| JWT Authentication | Token issuance/verification and request middleware integration. | Stateless API security. |
+| RBAC Authorization | Role-policy checks and route-level enforcement. | Principle-of-least-privilege access model. |
+| Validation Engine | Request binding + declarative field validation with structured errors. | Input safety and API quality. |
+| Background Jobs | Async queueing, delayed/recurring jobs, retries and dead-letter handling patterns. | Scalable non-blocking workloads. |
+| Redis Cache | High-speed caching primitives with TTL, hash, and atomic key operations. | Lower latency and DB load reduction. |
+| OpenAPI & Swagger | Programmatic API spec generation + interactive docs endpoint. | Faster API adoption and governance. |
+| CLI Tooling | Project bootstrap and developer workflow acceleration. | Standardized service scaffolding. |
+| WebSocket Support | Real-time connections, rooms/channels, event broadcast patterns. | Live product experiences. |
+| GraphQL Support | Optional operation engine for schema-driven data access. | Flexible query surfaces for clients. |
+| Feature Flags | Global/user/role scoped release controls. | Safer and faster feature rollout. |
+| File Storage | Upload and persistence adapters, optional encryption workflows. | Secure file lifecycle management. |
+| Prometheus Metrics | Native metrics endpoints and instrumentation integration. | Real-time SLO/SLA tracking. |
+| Security Hardening | Request limits, secure defaults, password hashing, transport-aware controls. | Reduced attack surface. |
+| Plugin/Module System | Extensible hooks and plugin manager for modular capability growth. | Platform extensibility without core churn. |
+| Multi-Environment Config | Environment-specific config overlays and deployment profiles. | Dev/Test/Prod parity with governance. |
+
+### Router (Radix Tree)
+
+ZenX routes requests through a radix-tree strategy optimized for fast lookups and clean path parameter support. It enables deterministic behavior at high request volume and supports method-level route trees to ensure precise 404/405 semantics.
+
+### Middleware Runtime
+
+The middleware chain composes operational and business policies with explicit execution order. Teams can standardize request IDs, tracing contexts, auth gates, timeout guards, and distributed rate limits without repeating logic across handlers.
+
+### Dependency Injection
+
+ZenX DI enables modular service registration and bounded dependency resolution. This improves architecture hygiene in growing codebases by reducing global state usage and making services easier to test in isolation.
+
+### Configuration and Logging
+
+Configuration supports environment-first loading with file overlays (YAML/JSON/TOML) and runtime update patterns. Logging is structured and correlation-friendly, helping SRE and security teams tie requests to distributed traces and incident events.
+
+### Database and Transaction Layer
+
+ZenX provides adapters for MySQL and PostgreSQL, explicit transaction boundaries, and practical ORM-like helpers to accelerate CRUD-heavy domains while retaining direct SQL control where precision or performance tuning is required.
+
+### JWT + RBAC Security Model
+
+Authentication and authorization are first-class concerns:
+
+- JWT verification gates request identity.
+- RBAC policies guard privileged routes and actions.
+- Passwords are handled via modern hashing primitives.
+
+This provides a scalable baseline for multi-user systems and enterprise permission models.
+
+### Validation and API Contract Integrity
+
+Input binding and validation are integrated so APIs can reject malformed or risky payloads early, returning deterministic error structures that improve client integration quality.
+
+### Background Jobs and Asynchronous Work
+
+ZenX’s job subsystem supports synchronous API backends and asynchronous workloads in one architecture: retries, delayed jobs, recurring schedules, and dead-letter isolation patterns are available for robust task execution.
+
+### Cache, Metrics, and API Documentation
+
+Redis integration, Prometheus metrics exposure, and OpenAPI/Swagger documentation are provided as native runtime concerns rather than afterthoughts—helping teams achieve faster incident diagnosis and stronger API governance.
+
+### Developer Ergonomics
+
+With built-in CLI scaffolding, teams can bootstrap standardized service templates quickly and inherit best practices for health checks, metrics endpoints, and platform conventions.
+
+---
+
+## Ultra Enterprise Expansion Features
+
+ZenX Ultra Enterprise expands core capabilities for organizations operating multi-team, high-compliance, distributed systems.
+
+### Enterprise Capability Matrix
+
+| Domain | Enterprise Capability | ZenX Ultra Enterprise Value |
+|---|---|---|
+| Service Topology | Microservices architecture support | Standardized service boundaries and deployment patterns across domains. |
+| Discovery & Routing | Service discovery + API gateway | Dynamic routing, centralized policy, and secure ingress control. |
+| RPC & Contracts | gRPC service integration | Efficient binary communication and strongly typed service contracts. |
+| Orchestration | Kubernetes-native integration | Production deployment consistency, autoscaling, and declarative operations. |
+| Event Backbone | Kafka, NATS, Redis Streams patterns | Decoupled event-driven workflows and resilient asynchronous architecture. |
+| Domain Modeling | CQRS + DDD support | Clear separation of command/query responsibilities and bounded contexts. |
+| Identity Federation | OAuth2 + OIDC | Enterprise SSO readiness and federated access control. |
+| Trust Model | mTLS + Zero Trust enforcement | Identity-aware, encrypted service-to-service communication. |
+| Governance | Immutable audit logging | Compliance-grade accountability for critical actions and access events. |
+| Observability | Jaeger/Zipkin compatible tracing | End-to-end request visibility in distributed systems. |
+| Performance | Throughput and memory optimization layers | Lower tail latencies and improved cost efficiency. |
+| Tenancy | Multi-tenant architecture controls | Isolation, policy segmentation, and tenant lifecycle support. |
+| Extensibility | WASM plugin marketplace model | Safe and portable extension lifecycle. |
+| Delivery | CI/CD and DevOps integration patterns | Faster release cycles with safer deployment gates. |
+| Quality | Integrated testing infrastructure | Regression control across unit, integration, and distributed test tiers. |
+| Monetization | Billing and SaaS primitives | Subscription, metering, and quota enforcement building blocks. |
+| Intelligence | AI integration interfaces | ML-powered personalization, anomaly analysis, and policy assistance. |
+| Operations | Admin APIs | Secure operational control and runtime introspection endpoints. |
+
+### Microservices and Service Discovery
+
+ZenX supports decomposition from modular monoliths into service-aligned domains while preserving shared platform contracts. Service discovery primitives allow workloads to locate peers dynamically, reducing static coupling and improving failover behavior.
+
+### API Gateway + gRPC
+
+Gateway capabilities centralize ingress policy, version routing, and cross-cutting controls. gRPC extends inter-service communication with high efficiency and schema-governed contracts, ideal for low-latency internal APIs.
+
+### Kubernetes-Native Lifecycle
+
+ZenX aligns with Kubernetes conventions for health probes, graceful shutdown, deployment rollouts, and horizontal scaling. This enables teams to manage runtime behavior declaratively through cluster policy and GitOps pipelines.
+
+### Event-Driven Architecture
+
+For asynchronous domains, ZenX supports patterns across Kafka, NATS, and Redis Streams, enabling outbox/event sourcing workflows, stream consumers, and resilient event fan-out in business-critical systems.
+
+### CQRS, DDD, and Enterprise Domain Architecture
+
+ZenX encourages explicit modeling boundaries and command/query segregation so systems remain maintainable as business complexity grows. Teams can evolve domain-specific services without collapsing into tightly coupled dependency graphs.
+
+### OAuth2/OIDC, mTLS, and Zero Trust
+
+Identity federation via OAuth2/OIDC enables modern workforce and partner access integration. Combined with mTLS and zero trust principles, ZenX helps enforce service identity, encrypted transport, and least-trust communication semantics across cluster boundaries.
+
+### Auditability and Compliance Signals
+
+Audit logs are treated as immutable accountability records suitable for regulated environments. Operational actions, privileged API access, and policy changes can be tracked and surfaced for governance reviews.
+
+### Observability at Scale
+
+Distributed tracing interoperability (Jaeger/Zipkin patterns) plus metrics and logs creates a full telemetry triad. This enables deeper root-cause analysis, performance regression detection, and SLO stewardship.
+
+### Multi-Tenancy and Monetization
+
+ZenX includes foundational components for tenant-aware infrastructure and SaaS monetization models such as quota management, subscription states, and usage metering.
+
+### WASM Plugin Marketplace Direction
+
+ZenX extends platform capability through controlled plugin isolation models and a WASM-oriented extension strategy. This enables safer custom logic execution without forcing forks of core runtime logic.
+
+### DevOps, Testing, and Admin Operations
+
+ZenX enterprise workflows integrate build pipelines, test stages, progressive rollout strategies, and admin APIs for controlled runtime operations—critical for large platform teams and regulated releases.
+
+---
+
+## Autonomous Platform Engineering Layer
+
+ZenX’s Autonomous Layer introduces adaptive, policy-aware runtime controls that continuously optimize availability, performance, and resilience.
+
+### Autonomous Capability Matrix
+
+| Autonomous Domain | Capability | Operational Impact |
+|---|---|---|
+| Runtime Health | Self-healing runtime loops | Faster recovery from process and dependency instability. |
+| Optimization | Auto-tuning engine | Dynamic parameter optimization for latency, throughput, and resource efficiency. |
+| Platform Control | Dynamic control plane | Runtime policy updates without full redeployment. |
+| Consensus | Leader election & distributed coordination | Safe distributed orchestration for singleton tasks and cluster actions. |
+| Traffic Intelligence | Traffic shaping engine | Adaptive load control, burst management, and priority routing. |
+| Runtime Security | Execution sandbox controls | Reduced blast radius for untrusted or extensible modules. |
+| Performance Analytics | Real-time intelligence pipeline | Continuous visibility into bottlenecks and degradation trends. |
+| Geography | Geo-distributed regional support | Lower latency and resilient global service topology. |
+| Data Protection | GDPR-aware controls, encryption, masking | Stronger privacy posture and regulatory alignment. |
+| Delivery Safety | Blue/Green and Canary orchestration | Zero-downtime and low-risk release progression. |
+| AI Assurance | Anomaly detection and response signals | Early detection of drift, abuse patterns, and production regressions. |
+
+### Self-Healing Runtime
+
+ZenX incorporates supervisory and watchdog patterns that detect degraded service states and trigger controlled recovery paths. Instead of relying only on external orchestration, runtime-level self-healing provides faster local correction and richer incident context.
+
+### Auto-Tuning and Dynamic Control Plane
+
+Traffic thresholds, job concurrency, cache policies, and selected performance parameters can be adapted dynamically under policy control. This enables runtime optimization loops tuned to real workloads, not static assumptions.
+
+### Leader Election and Distributed Consensus
+
+ZenX supports cluster coordination primitives for leader-sensitive tasks (e.g., scheduled jobs, control actions, migration guards). Consensus-based coordination reduces split-brain risks in distributed control scenarios.
+
+### Traffic Shaping and Security Sandbox
+
+The autonomous traffic engine can prioritize critical workloads, limit noisy neighbors, and enforce adaptive rate policies. Runtime sandboxing further isolates risky extension points, strengthening defense-in-depth in extensible systems.
+
+### Real-Time Performance Intelligence
+
+By combining metrics, traces, logs, and anomaly pipelines, ZenX can build a living operational profile of service health and behavior. This shortens mean time to detect (MTTD) and mean time to restore (MTTR).
+
+### Geo-Distributed Resilience
+
+ZenX’s architecture supports region-aware deployments, data protection controls, and failover orchestration patterns to preserve business continuity under regional outage conditions.
+
+### Data Protection and Compliance-Ready Design
+
+Enterprise controls include encryption strategies, data masking workflows, and governance primitives to support privacy-sensitive workloads and compliance readiness trajectories (GDPR-aligned and SOC2-oriented architecture patterns).
+
+### Zero-Downtime Delivery and AI Anomaly Detection
+
+Progressive deployment modes (blue/green, canary) reduce release risk. AI-assisted anomaly detection augments human operations by flagging drift, attack patterns, and performance regression signatures before full customer impact.
+
+---
+
+## Architecture Diagram Section
+
+The following ASCII diagrams illustrate how ZenX components cooperate across runtime, platform, and distributed topology layers.
+
+### 1) Request Flow (Single Service Runtime)
 
 ```text
-zenx/
-├─ cmd/zenx/
-│  ├─ main.go
-│  └─ new.go
-├─ internal/
-│  ├─ auth/
-│  ├─ cache/
-│  ├─ database/
-│  ├─ jobs/
-│  ├─ middleware/
-│  ├─ openapi/
-│  ├─ router/
-│  ├─ validation/
-│  ├─ websocket/
-│  ├─ notifications/
-│  ├─ featureflags/
-│  ├─ storage/
-│  ├─ tracing/
-│  ├─ graphql/
-│  └─ plugins/
-├─ migrations/
-├─ pkg/
-│  ├─ config/
-│  ├─ di/
-│  ├─ logger/
-│  ├─ metrics/
-│  └─ examples/
-└─ go.mod
+[Client]
+   |
+   v
+[API Gateway / Ingress]
+   |
+   v
+[ZenX Router (Radix)] --> [Middleware Chain]
+                            |-- Request ID
+                            |-- AuthN (JWT)
+                            |-- AuthZ (RBAC)
+                            |-- Validation
+                            |-- Rate Limit / Security Controls
+                            v
+                       [Handler / Service Layer]
+                            |-- DI Container
+                            |-- Domain Logic
+                            |-- Feature Flags
+                            v
+              +-------------+-------------+
+              |                           |
+              v                           v
+        [Database Layer]            [Redis Cache]
+              |                           |
+              +-------------+-------------+
+                            v
+                       [Response]
+                            |
+                            v
+                         [Client]
+```
+
+### 2) Distributed Cluster Flow
+
+```text
+                          +-----------------------+
+                          |   Control Plane API   |
+                          +-----------+-----------+
+                                      |
+                                      v
+                    +-----------------+-----------------+
+                    |   ZenX Cluster Coordination        |
+                    | (Leader Election / Membership)     |
+                    +-----------+-------------+----------+
+                                |             |
+         +----------------------+             +----------------------+
+         v                                                   v
++--------------------+                              +--------------------+
+| Service Node A     |<----- Service Discovery ---->| Service Node B     |
+| Router/Middleware  |                              | Router/Middleware  |
+| Jobs/Events        |                              | Jobs/Events        |
++---------+----------+                              +----------+---------+
+          |                                                    |
+          +------------------+   +----------------------------+
+                             v   v
+                      +----------------+
+                      | Event Backbone |
+                      | Kafka/NATS/... |
+                      +----------------+
+```
+
+### 3) Event-Driven Flow
+
+```text
+[Producer Service]
+      |
+      v
+[Domain Event Publisher] --> [Outbox Pattern] --> [Broker Topic/Stream]
+                                                     |
+                                                     v
+                                             [Consumer Group]
+                                                     |
+                                                     +--> [Projection Service (CQRS Read)]
+                                                     |
+                                                     +--> [Notification Service]
+                                                     |
+                                                     +--> [Audit Sink / Data Lake]
+```
+
+### 4) Multi-Region Failover Flow
+
+```text
+                 +---------------- Global Traffic Manager ----------------+
+                 |               Health + Latency Routing                 |
+                 +-----------+------------------------------+-------------+
+                             |                              |
+                             v                              v
+                   [Region A - Primary]            [Region B - Secondary]
+                   +--------------------+           +--------------------+
+                   | ZenX Service Mesh  |           | ZenX Service Mesh  |
+                   | DB + Cache + Queue |           | DB + Cache + Queue |
+                   +---------+----------+           +---------+----------+
+                             |                                |
+                             +----------- Replication --------+
+                                         (Data + Events)
+
+Failure in Region A -> Traffic shifts to Region B using policy gates,
+progressive degradation rules, and controlled recovery synchronization.
 ```
 
 ---
 
-## Quick start
+## Installation Guide
 
-### 1) Build CLI
+### Prerequisites
+
+- Go **1.21+**
+- Docker / Docker Compose (recommended for local dependencies)
+- Kubernetes cluster (for production-style deployment validation)
+- Optional: `kubectl`, Helm, and CI tooling
+
+### 1) Clone Repository
 
 ```bash
+git clone https://github.com/<your-org>/zenx.git
+cd zenx
+```
+
+### 2) Build ZenX CLI and Runtime
+
+```bash
+go mod tidy
 go build -o zenx ./cmd/zenx
 ```
 
-### 2) Scaffold a new project
+### 3) Run Locally
 
 ```bash
+# Run directly
+go run ./cmd/zenx
+
+# or scaffold and run a service
 ./zenx new myservice
-```
-
-### 3) Run scaffolded service
-
-```bash
 cd myservice
 go run ./cmd/server
 ```
 
-### 4) Verify health and metrics
+### 4) Docker Usage
+
+```bash
+# Build image
+docker build -t zenx:local .
+
+# Run with compose dependencies (if provided)
+docker compose up --build
+```
+
+### 5) Kubernetes Deployment
+
+```bash
+# Apply Helm chart values as needed
+helm upgrade --install zenx ./helm -n zenx --create-namespace
+
+# Verify rollout
+kubectl rollout status deploy/zenx -n zenx
+kubectl get pods -n zenx
+```
+
+### 6) Verify Health, Metrics, and API Docs
 
 ```bash
 curl http://localhost:8080/health
 curl http://localhost:8080/metrics
+curl http://localhost:8080/openapi.json
 ```
 
----
+### Recommended Environment Profiles
 
-## CLI usage
-
-```bash
-zenx <command> [options]
-```
-
-Supported commands:
-
-- `zenx new <project>`: create a starter application skeleton.
-
----
-
-## Configuration
-
-ZenX supports both **environment variables** and **file-based config**.
-
-### Environment variables
-
-| Variable | Description | Default |
+| Environment | Focus | Typical Additions |
 |---|---|---|
-| `ZENX_APP_NAME` | Service name | `ZenX` |
-| `ZENX_ENV` | Environment | `development` |
-| `ZENX_HTTP_ADDR` | HTTP listen address | `:8080` |
-| `ZENX_REQUEST_TIMEOUT_SEC` | Request timeout in seconds | `15` |
-| `ZENX_JWT_SECRET` | JWT signing secret | `dev-secret` |
-| `ZENX_DATABASE_URL` | DB DSN | empty |
-| `ZENX_REDIS_ADDR` | Redis address | `127.0.0.1:6379` |
-
-### File config
-
-`pkg/config` supports:
-
-- `.yaml` / `.yml`
-- `.json`
-- `.toml`
-
-You can also use `Watcher` for hot reload:
-
-```go
-w, err := config.NewWatcher("./configs/app.yaml")
-if err != nil { panic(err) }
-
-w.Start(2*time.Second, func(c config.Config) {
-    // apply dynamic updates
-})
-```
+| Development | Fast iteration | Verbose logging, local DB/cache containers, mock identity provider |
+| Staging | Release confidence | Synthetic load tests, canary analysis, security policy validation |
+| Production | Reliability + governance | HA clusters, strict RBAC, audit export, full telemetry and alerting |
 
 ---
 
-## Core framework modules
+## Example Use Cases
 
-### Router (`internal/router`)
+### 1) SaaS Multi-Tenant Platform
 
-- `Router.Handle(method, path, handler, middlewares...)`
-- Path params via `:id` style segments.
-- Automatic `404` and `405` semantics.
-- Global middleware via `Use`.
+**Scenario:** A B2B SaaS vendor serves thousands of organizations with per-tenant plans and role models.
 
-### Middleware (`internal/middleware`)
+**ZenX Architecture Fit:**
 
-Included middleware:
+- Multi-tenant request context and RBAC segmentation.
+- Subscription/metering primitives for usage-based billing.
+- Feature flags for tenant-level product packaging.
+- Audit logs for admin action traceability.
 
-- `RequestID()`
-- `Timeout(duration)`
-- `CORS(origins)`
-- `RateLimit(rps, burst)` (in-memory)
-- `DistributedRateLimitTokenBucket(redis, namespace, burst, refill)`
-- `SecureHeaders()`
-- `CSRF(headerName)`
-- `BruteForceGuard(maxAttempts, period)`
+**Outcome:** Product teams ship quickly while platform teams maintain clear tenancy isolation and monetization controls.
 
-### DI (`pkg/di`)
+### 2) Fintech Transaction Platform
 
-Register singleton dependencies and resolve into structs:
+**Scenario:** A regulated payments platform processes sensitive financial workflows and partner integrations.
 
-```go
-container := di.New()
-container.Register(db)
-container.Register(cache)
+**ZenX Architecture Fit:**
 
-var handler struct {
-    DB    *database.DB
-    Cache *cache.RedisCache
-}
-_ = container.Resolve(&handler)
-```
+- OAuth2/OIDC federation for partner and workforce identity.
+- mTLS and zero trust service communication.
+- Immutable audit trails and policy-governed admin APIs.
+- CQRS/event workflows for ledger, reconciliation, and notification streams.
 
-### Logger (`pkg/logger`)
+**Outcome:** Compliance and reliability are built into architecture decisions, not bolted on after launch.
 
-- JSON structured logger.
-- Request ID extraction from context for per-request logs.
+### 3) AI Inference Backend
 
-### Validation (`internal/validation`)
+**Scenario:** An AI product exposes real-time inference APIs with asynchronous enrichment and feedback loops.
 
-Use binder + validator:
+**ZenX Architecture Fit:**
 
-```go
-var req CreateUserRequest
-if err := validation.BindAndValidate(r, &req, validator); err != nil {
-    // return centralized error response
-}
-```
+- High-throughput request routing and caching.
+- Background jobs for enrichment, retraining triggers, and post-processing.
+- Event streams for model telemetry and feedback ingestion.
+- Real-time performance intelligence and anomaly detection integration.
 
-### Auth (`internal/auth`)
+**Outcome:** AI services remain observable, adaptive, and operationally stable under bursty demand.
 
-- `JWTManager` for token issue/parse.
-- `JWTAuth` middleware.
-- `RequireRoles("admin")` middleware.
-- `HashPassword` / `VerifyPassword`.
+### 4) Real-Time Chat and Collaboration Platform
 
-### Database (`internal/database`)
+**Scenario:** A collaboration suite requires low-latency messaging, presence, and room-based events.
 
-- Driver constants: `MySQLDriver`, `PostgresDriver`.
-- `DB.Migrate(ctx, "./migrations")`.
-- `TxManager.WithinTransaction`.
-- Query builder: `Table("users").Where(...).Limit(...)`.
-- ORM-like helpers: `Insert`, `Delete`.
+**ZenX Architecture Fit:**
 
-### Cache (`internal/cache`)
+- WebSocket hubs and room broadcast patterns.
+- Redis/event backplane for horizontal fan-out.
+- Traffic shaping and rate controls for burst safety.
+- Metrics/tracing for end-user latency and channel reliability.
 
-`RedisCache` methods:
+**Outcome:** Real-time user experiences scale without sacrificing governance and incident visibility.
 
-- `Set`, `Get`
-- `HSet`, `HGet`
-- `Exists`, `Delete`, `TTL`
+### 5) Enterprise Microservices Ecosystem
 
-### Jobs (`internal/jobs`)
+**Scenario:** A large enterprise operates domain services owned by multiple teams with shared platform guardrails.
 
-- In-memory queue:
-  - `NewQueue(workers)`
-  - `Enqueue(job, delay, retries)`
-  - `ScheduleRecurring(ctx, interval, job, retries)`
-- Distributed queue (`DistributedQueue`): Redis sorted-set based scheduling, retry, DLQ.
+**ZenX Architecture Fit:**
+
+- Service discovery and API gateway policy standardization.
+- Shared identity, logging, tracing, and deployment conventions.
+- Plugin/module strategy for controlled extension by domain teams.
+- Progressive delivery and failover patterns for low-risk releases.
+
+**Outcome:** Teams retain autonomy while platform standards preserve security and reliability.
 
 ---
 
-## Enterprise modules
+## Production Readiness
 
-### WebSocket (`internal/websocket`)
+ZenX is designed for real-world production operations and enterprise governance needs.
 
-- `Hub` for client lifecycle and room maps.
-- `Manager` HTTP upgrader + authz callback.
-- Broadcast APIs:
-  - All clients
-  - Room clients
-  - Single client
+### 1) Horizontal Scaling
 
-### GraphQL (`internal/graphql`)
+- Stateless API nodes scale behind ingress/load balancers.
+- Redis/event backplanes support distributed state coordination patterns.
+- Kubernetes-native autoscaling and rollout orchestration align with cloud operations.
 
-- Operation registration for query/mutation handlers.
-- Role/authorization gate callback per operation.
-- Lightweight JSON protocol (`type`, `name`, `args`).
+### 2) High Availability
 
-### Feature flags (`internal/featureflags`)
+- Health probes and graceful shutdown behavior support reliable node lifecycle handling.
+- Multi-instance service patterns and discovery reduce single-point dependency risks.
+- Regional failover architecture allows business continuity posture.
 
-`FlagRule` supports:
+### 3) Fault Tolerance
 
-- `Global`
-- per-role enables
-- per-user enables
+- Retry policies, dead-letter queues, and asynchronous decoupling patterns reduce cascading failures.
+- Runtime supervision and recovery primitives support rapid service stabilization.
+- Control plane hooks allow safe intervention and operational throttling.
 
-### Notifications (`internal/notifications`)
+### 4) Observability and SRE Alignment
 
-- SMTP templated email sender with retry/backoff.
-- Webhook push sender with retry/backoff.
+- Metrics (Prometheus), traces (OpenTelemetry/Jaeger/Zipkin), and structured logs are first-class.
+- Correlated telemetry improves incident triage and postmortem quality.
+- Health scoring and anomaly detection increase early warning capability.
 
-### Storage (`internal/storage`)
+### 5) Security Model
 
-- Multipart upload size validation.
-- Local filesystem backend.
-- Optional AES encryption for uploaded payloads.
+- JWT, RBAC, OAuth2/OIDC, and mTLS support layered identity assurance.
+- Security middleware applies request-level protections (timeouts, rate limits, validation).
+- Plugin sandbox concepts and policy controls reduce extension-related risk.
 
-### Tracing (`internal/tracing`)
+### 6) Compliance Readiness
 
-- Wrapper around OpenTelemetry tracer acquisition and span creation.
+ZenX is built with **compliance-ready design principles**:
 
-### Plugins (`internal/plugins`)
+- **GDPR alignment:** data minimization pathways, masking, and governance-friendly controls.
+- **SOC2-ready architecture:** auditable controls, access boundaries, telemetry evidence sources.
+- **Policy-first operations:** standardized deployment and runtime controls to reduce configuration drift.
 
-Hook interface:
+> ZenX does not automatically confer certification. It provides architecture patterns and control points that simplify formal compliance programs.
 
-- `OnRequest`
-- `OnJobComplete`
-- `OnShutdown`
+### Production Checklist
 
----
-
-## Observability
-
-### Metrics (`pkg/metrics`)
-
-Prometheus metrics included:
-
-- `zenx_db_queries_total`
-- `zenx_cache_operations_total`
-- `zenx_jobs_runs_total`
-- `zenx_websocket_connections`
-
-Expose metrics endpoint in your HTTP mux:
-
-```go
-mux.Handle("/metrics", metrics.Handler())
-```
-
-### Health check
-
-Recommended endpoint:
-
-- `GET /health` -> `200 OK`
+| Checklist Area | Key Actions |
+|---|---|
+| Security | Rotate secrets, enforce mTLS, configure RBAC least privilege, enable audit sinks |
+| Resilience | Define timeout budgets, configure retries/circuit breakers, test failover runbooks |
+| Observability | Set SLOs, configure alerts for latency/error saturation, wire traces to incident tooling |
+| Data Governance | Enable encryption-at-rest/in-transit, define retention and masking policies |
+| Delivery | Use canary/blue-green workflows, add rollback automation, validate post-deploy KPIs |
 
 ---
 
-## Security
+## Roadmap
 
-ZenX includes baseline protections:
+ZenX’s roadmap focuses on extending platform autonomy, portability, and intelligent operations.
 
-- JWT authentication + RBAC authorization.
-- bcrypt password hashing.
-- CORS controls.
-- CSRF middleware.
-- Standard secure headers.
-- Brute-force guard middleware.
-- Per-route/global/user rate limiting patterns.
+### Near-Term
 
-> For internet-facing production systems, also add TLS termination, secret management (vault/KMS), stricter origin policies, key rotation, and security scanning in CI.
+- Enhanced control-plane policy APIs for runtime governance.
+- Deeper multi-tenant security partitioning and billing integrations.
+- Expanded reference architectures for regulated industries.
 
----
+### Strategic Roadmap
 
-## OpenAPI and Swagger UI
+1. **Serverless Runtime Profile**
+   - Lightweight execution mode optimized for burst workloads and event invocations.
+   - Unified developer experience across always-on and serverless deployments.
 
-- Build specs with `openapi.Builder`.
-- Add path metadata with optional bearer roles.
-- Serve JSON via `builder.Handler()`.
-- Serve UI via `openapi.SwaggerUI("/openapi.json")`.
+2. **AI Self-Optimizing Cluster**
+   - Closed-loop optimization using runtime telemetry and workload signatures.
+   - Adaptive autoscaling and policy tuning with explainable recommendations.
 
-Example:
+3. **Edge Deployment Support**
+   - Region/edge-aware routing and cache policies for ultra-low-latency use cases.
+   - Federated control with centralized governance and localized execution.
 
-```go
-spec := openapi.New("ZenX API", "1.0.0")
-spec.AddPath("/users", "GET", "List users", true, "admin")
+4. **WASI Sandbox Enhancements**
+   - Hardened sandbox profiles for third-party and tenant-specific extension execution.
+   - Marketplace-quality validation, signing, and trust policy workflows.
 
-mux.HandleFunc("/openapi.json", spec.Handler())
-mux.HandleFunc("/swagger", openapi.SwaggerUI("/openapi.json"))
-```
+### Long-Horizon Vision
 
----
+ZenX aims to become a universal backend runtime layer where teams can:
 
-## How to use this framework in real projects
-
-This section shows a practical pattern for building a ZenX application with **models, repositories, services, controllers, routes, and middleware**.
-
-### 1) Suggested project structure
-
-When using ZenX in an app repository, a common structure is:
-
-```text
-myservice/
-├─ cmd/server/main.go
-├─ internal/
-│  ├─ models/
-│  ├─ repositories/
-│  ├─ services/
-│  ├─ controllers/
-│  ├─ middleware/
-│  └─ routes/
-├─ migrations/
-└─ configs/
-```
-
-### 2) Define a model
-
-```go
-type User struct {
-    ID       int64  `json:"id"`
-    Email    string `json:"email" validate:"required,email"`
-    Name     string `json:"name" validate:"required,min=2,max=100"`
-    Password string `json:"password,omitempty" validate:"required,min=8"`
-}
-```
-
-### 3) Create a repository
-
-Use `internal/database` query helpers and transaction support.
-
-```go
-type UserRepository struct {
-    DB *database.DB
-}
-
-func (r *UserRepository) Create(ctx context.Context, u User) error {
-    _, err := r.DB.Insert(ctx, "users", map[string]any{
-        "email": u.Email,
-        "name":  u.Name,
-    })
-    return err
-}
-
-func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*User, error) {
-    q, args, _ := database.Table("users").
-        Select("id", "email", "name").
-        Where("email = ?", email).
-        Limit(1).
-        Build()
-
-    row := r.DB.QueryRowContext(ctx, q, args...)
-    var u User
-    if err := row.Scan(&u.ID, &u.Email, &u.Name); err != nil {
-        return nil, err
-    }
-    return &u, nil
-}
-```
-
-### 4) Create a service layer
-
-Put business rules here (hashing, cache policy, async jobs, feature checks).
-
-```go
-type UserService struct {
-    Users *UserRepository
-    Cache *cache.RedisCache
-    Jobs  *jobs.Queue
-}
-
-func (s *UserService) Register(ctx context.Context, u User) error {
-    hash, err := auth.HashPassword(u.Password)
-    if err != nil {
-        return err
-    }
-    u.Password = hash
-
-    if err := s.Users.Create(ctx, u); err != nil {
-        return err
-    }
-
-    s.Jobs.Enqueue(jobs.JobFunc{
-        JobName: "send_welcome_email",
-        Fn: func(context.Context) error {
-            // send email via notifications.EmailSender
-            return nil
-        },
-    }, 0, 3)
-
-    return nil
-}
-```
-
-### 5) Create a controller (handler)
-
-Controllers should focus on HTTP concerns: bind, validate, authorize, call service, respond.
-
-```go
-type UserController struct {
-    Validator *validation.Validator
-    Service   *UserService
-}
-
-func (ctl *UserController) Register(c *router.Context) {
-    var req User
-    if err := validation.BindAndValidate(c.Request, &req, ctl.Validator); err != nil {
-        http.Error(c.Writer, err.Error(), http.StatusBadRequest)
-        return
-    }
-
-    if err := ctl.Service.Register(c.Request.Context(), req); err != nil {
-        http.Error(c.Writer, "failed to register user", http.StatusInternalServerError)
-        return
-    }
-
-    c.Writer.WriteHeader(http.StatusCreated)
-    _, _ = c.Writer.Write([]byte(`{"status":"created"}`))
-}
-```
-
-### 6) Register dependencies with DI
-
-```go
-container := di.New()
-container.Register(db)
-container.Register(redisCache)
-container.Register(validation.New())
-container.Register(userRepo)
-container.Register(userService)
-
-var userController UserController
-_ = container.Resolve(&userController)
-```
-
-### 7) Build middleware stack
-
-A common order:
-1. request metadata (`RequestID`)
-2. security headers + CORS
-3. timeout and rate limit
-4. auth + RBAC for protected routes
-
-```go
-r := router.New()
-r.Use(
-    middleware.RequestID(),
-    middleware.SecureHeaders(),
-    middleware.CORS([]string{"https://app.example.com"}),
-    middleware.Timeout(15*time.Second),
-    middleware.RateLimit(20, 40),
-)
-
-jwtMgr := auth.NewJWTManager(cfg.JWTSecret, cfg.AppName, 24*time.Hour)
-
-r.Handle("POST", "/auth/register", userController.Register)
-r.Handle("GET", "/admin/users", adminListUsers,
-    auth.JWTAuth(jwtMgr),
-    auth.RequireRoles("admin"),
-)
-```
-
-### 8) Add custom middleware
-
-ZenX middleware signature:
-
-```go
-func MyMiddleware(next router.HandlerFunc) router.HandlerFunc {
-    return func(c *router.Context) {
-        start := time.Now()
-        next(c)
-        _ = start // track latency, log, etc.
-    }
-}
-```
-
-### 9) Add routes to OpenAPI
-
-```go
-spec := openapi.New("My Service", "1.0.0")
-spec.AddPath("/auth/register", "POST", "Register user", false)
-spec.AddPath("/admin/users", "GET", "List users", true, "admin")
-```
-
-### 10) Add health, metrics, and swagger endpoints
-
-```go
-mux := http.NewServeMux()
-mux.Handle("/metrics", metrics.Handler())
-mux.HandleFunc("/openapi.json", spec.Handler())
-mux.HandleFunc("/swagger", openapi.SwaggerUI("/openapi.json"))
-mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
-    w.WriteHeader(http.StatusOK)
-    _, _ = w.Write([]byte("ok"))
-})
-```
-
-### 11) Model migrations
-
-Place SQL files in `migrations/` and run:
-
-```go
-if err := db.Migrate(ctx, "./migrations"); err != nil {
-    log.Fatal(err)
-}
-```
-
-### 12) Debugging flow for new features
-
-When adding a new controller or middleware:
-
-1. create request/response model and validation tags.
-2. add repository queries and service methods.
-3. wire controller with DI.
-4. attach middleware at route or global level.
-5. add OpenAPI route metadata.
-6. test endpoint via curl/Postman and verify metrics/logs.
+- Build once across centralized cloud and edge topologies.
+- Operate with autonomous guardrails and continuous optimization.
+- Embed compliance and governance controls directly into engineering workflows.
 
 ---
 
-## How to run
-
-### Local run (framework repo)
-
-```bash
-go run ./cmd/zenx
-```
-
-### Build and run CLI
-
-```bash
-go build -o zenx ./cmd/zenx
-./zenx new demo
-cd demo
-go run ./cmd/server
-```
-
----
-
-## How to test
-
-### Format
-
-```bash
-gofmt -w $(rg --files -g '*.go')
-```
-
-### Unit / package tests
-
-```bash
-go test ./...
-```
-
-### Targeted packages (if external dependencies are restricted)
-
-```bash
-go test ./internal/router ./internal/openapi ./internal/featureflags ./internal/graphql ./internal/plugins ./internal/storage ./pkg/di ./pkg/logger
-```
-
----
-
-## How to debug
-
-### Basic runtime debugging
-
-- Run with verbose logging in development (`ZENX_ENV=development`).
-- Include request IDs in log lines via middleware + context logger helpers.
-- Validate middleware order (auth, timeout, rate-limit, CORS, etc.) for expected behavior.
-
-### Delve
-
-```bash
-dlv debug ./cmd/zenx
-```
-
-### Useful checks
-
-```bash
-# verify routing behavior
-curl -i http://localhost:8080/unknown
-
-# verify rate-limits
-hey -n 200 -c 20 http://localhost:8080/health
-
-# verify websocket handshake
-wscat -c ws://localhost:8080/ws
-```
-
----
-
-## Integration flow example
-
-Typical production request flow:
-
-1. Request enters router.
-2. RequestID + tracing middleware annotate context.
-3. Security middleware (headers, CSRF, brute-force, CORS).
-4. Authentication middleware (JWT).
-5. Authorization middleware (RBAC role check).
-6. Validation binder for request body.
-7. Business handler uses DI-managed services.
-8. Database/cache operations emit metrics.
-9. Async work enqueued to jobs queue.
-10. OpenAPI/Swagger and Prometheus endpoints remain available for ops.
-
-You can find sample usage references in `pkg/examples/usage.go`.
-
----
-
-## Production rollout checklist
-
-- [ ] Use strong JWT secret and rotate regularly.
-- [ ] Configure Redis/DB with secure credentials and TLS where applicable.
-- [ ] Set strict CORS allow-list.
-- [ ] Enable distributed rate limiting for multi-node deployments.
-- [ ] Enable tracing exporter and central log aggregation.
-- [ ] Configure alerting on Prometheus metrics.
-- [ ] Run migrations in CI/CD before deployment.
-- [ ] Configure dead-letter queue monitoring for distributed jobs.
-- [ ] Add integration and load tests for critical APIs.
-
----
-
-## Known environment notes
-
-In restricted environments, `go test ./...` may fail if dependencies cannot be fetched to produce `go.sum` entries. In that case:
-
-1. Run targeted package tests that do not require external module resolution.
-2. Re-run `go mod tidy` and full tests once network/module access is available.
-
----
+## License & Contribution
 
 ## License
 
-Add your preferred license (MIT/Apache-2.0/etc.) at repository root.
+ZenX is released under the **MIT License** (or your project’s chosen OSS license).
+
+- You are free to use, modify, and distribute according to license terms.
+- Organizations are encouraged to perform internal security and compliance reviews before production adoption.
+
+## Contribution Guidelines
+
+We welcome contributions from platform engineers, backend developers, security practitioners, and architects.
+
+### How to Contribute
+
+1. Fork the repository.
+2. Create a feature branch:
+
+```bash
+git checkout -b feat/your-capability
+```
+
+3. Commit with clear, scope-oriented messages.
+4. Add/adjust tests and documentation.
+5. Open a pull request with architecture rationale and operational impact notes.
+
+### Recommended Contribution Standards
+
+- Keep changes modular and well-scoped.
+- Preserve backward compatibility where feasible.
+- Include observability and security implications in PR descriptions.
+- Prefer explicit configuration contracts over hidden defaults.
+
+### Community and Governance
+
+- Use issues for bug reports, feature proposals, and architecture discussions.
+- Label enterprise-impacting changes clearly.
+- Propose RFC-style documents for substantial platform evolutions.
+
+---
+
+## Final Notes
+
+ZenX is built for teams that need both **developer speed** and **platform discipline**. It provides a path from fast API delivery to enterprise-scale operations and onward to autonomous platform engineering.
+
+If your organization wants a Go-native backend foundation that can grow from startup velocity to global resilience, ZenX is designed to be that runway.

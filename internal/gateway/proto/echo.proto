@@ -1,0 +1,10 @@
+syntax = "proto3";
+package zenx.gateway.v1;
+option go_package = "zenx/internal/gateway/proto;gatewayv1";
+
+service EchoService {
+  rpc Echo(EchoRequest) returns (EchoResponse);
+}
+
+message EchoRequest { string message = 1; }
+message EchoResponse { string message = 1; }

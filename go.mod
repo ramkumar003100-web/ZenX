@@ -14,4 +14,5 @@ require (
 	go.opentelemetry.io/otel v1.33.0
 	go.opentelemetry.io/otel/sdk v1.33.0
 	gopkg.in/yaml.v3 v3.0.1
+	google.golang.org/grpc v1.69.2
 )

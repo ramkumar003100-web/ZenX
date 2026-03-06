@@ -27,7 +27,7 @@ func CSRF(headerName string) router.Middleware {
 	}
 	return func(next router.HandlerFunc) router.HandlerFunc {
 		return func(c *router.Context) {
-			if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead || c.Request.Method == http.MethodOptions {
+			if IsSafeMethod(c.Request.Method) {
 				next(c)
 				return
 			}

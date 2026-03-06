@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"zenx/internal/router"
@@ -19,24 +20,22 @@ type tokenBucket struct {
 func RateLimit(rps float64, burst int) router.Middleware {
 	var mu sync.Mutex
 	clients := map[string]*tokenBucket{}
-	cleanupTicker := time.NewTicker(5 * time.Minute)
-	go func() {
-		for range cleanupTicker.C {
-			now := time.Now()
-			mu.Lock()
-			for ip, bucket := range clients {
-				if now.Sub(bucket.lastSeen) > 10*time.Minute {
-					delete(clients, ip)
-				}
-			}
-			mu.Unlock()
-		}
-	}()
+	var cleanupCounter uint64
 
 	return func(next router.HandlerFunc) router.HandlerFunc {
 		return func(c *router.Context) {
 			ip := clientIP(c.Request)
 			now := time.Now()
+
+			if atomic.AddUint64(&cleanupCounter, 1)%1024 == 0 {
+				mu.Lock()
+				for ip, bucket := range clients {
+					if now.Sub(bucket.lastSeen) > 10*time.Minute {
+						delete(clients, ip)
+					}
+				}
+				mu.Unlock()
+			}
 
 			mu.Lock()
 			bucket, ok := clients[ip]

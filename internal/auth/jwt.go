@@ -45,7 +45,7 @@ func (m *JWTManager) Parse(token string) (*Claims, error) {
 			return nil, errors.New("invalid signing method")
 		}
 		return m.secret, nil
-	})
+	}, jwt.WithIssuer(m.issuer))
 	if err != nil {
 		return nil, err
 	}

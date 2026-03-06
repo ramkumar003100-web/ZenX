@@ -19,8 +19,9 @@
 6. [Installation Guide](#installation-guide)
 7. [Example Use Cases](#example-use-cases)
 8. [Production Readiness](#production-readiness)
-9. [Roadmap](#roadmap)
-10. [License & Contribution](#license--contribution)
+9. [Latest Framework Evolution Updates](#latest-framework-evolution-updates)
+10. [Roadmap](#roadmap)
+11. [License & Contribution](#license--contribution)
 
 ---
 
@@ -78,6 +79,32 @@ This makes ZenX suitable for organizations that treat backend architecture as a 
 ## Core Framework Features
 
 ZenX Core provides a high-performance, composable baseline for modern Go services.
+
+## Latest Framework Evolution Updates
+
+The latest incremental framework evolution introduced the following improvements:
+
+### Routing and API Ergonomics
+
+- Added route grouping support through `Router.Group(...)` and nested groups to simplify common path prefix management.
+- Added API version grouping via `Group.Version(...)` to make `/api/v1/...` registration consistent and maintainable.
+- Preserved backward compatibility by keeping existing `Router.Handle(...)` behavior unchanged.
+
+### Observability and Reliability
+
+- Added request correlation middleware (`RequestID`) that propagates `X-Request-ID` through request context and response headers.
+- Added panic recovery middleware (`Recovery`) that captures panic metadata and stack traces using structured `slog` logging.
+- Added foundational tests for grouping/versioning and request ID propagation.
+
+### Security and Middleware Hardening
+
+- Hardened JWT parsing by enforcing issuer validation with `jwt.WithIssuer(...)`.
+- Refactored local rate-limiter cleanup to remove unmanaged ticker goroutines and use opportunistic cleanup during requests.
+- Unified safe HTTP method checks through shared middleware utility logic used by CSRF middleware.
+
+### Audit and Planning
+
+- Added `docs/framework_audit.md` containing architecture audit findings, bottlenecks, security observations, and next-iteration recommendations.
 
 ### Core Capability Matrix
 
